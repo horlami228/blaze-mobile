@@ -1,4 +1,9 @@
-import { API_URL, REQUEST_TIMEOUT, STORAGE_KEYS } from "@/constants/config";
+import {
+  API_ENDPOINTS,
+  API_URL,
+  REQUEST_TIMEOUT,
+  STORAGE_KEYS,
+} from "@/constants/config";
 import axios, {
   AxiosError,
   AxiosInstance,
@@ -131,9 +136,12 @@ apiClient.interceptors.response.use(
 
         if (refreshToken) {
           // Attempt to refresh the token
-          const response = await axios.post(`${API_URL}/auth/refresh`, {
-            refreshToken,
-          });
+          const response = await axios.post(
+            `${API_URL}${API_ENDPOINTS.REFRESH_TOKEN}`,
+            {
+              refreshToken,
+            }
+          );
 
           const { token, refreshToken: newRefreshToken } = response.data;
 

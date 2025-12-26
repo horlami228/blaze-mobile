@@ -57,7 +57,7 @@ export const API_ENDPOINTS = {
   // Auth
   LOGIN: "/auth/login",
   LOGOUT: "/auth/logout",
-  REFRESH: "/auth/refresh",
+  REFRESH_TOKEN: "/auth/refresh",
   REGISTER: "/auth/register",
   VERIFY_OTP: "/auth/verify-otp",
   RESEND_OTP: "/auth/resend-otp",
@@ -66,25 +66,16 @@ export const API_ENDPOINTS = {
   USER_PROFILE: "/user/profile",
   UPDATE_PROFILE: "/user/profile",
 
-  // Rides
-  REQUEST_RIDE: "/rides/request",
-  CANCEL_RIDE: "/rides/cancel",
-  RIDE_HISTORY: "/rides/history",
-  RIDE_DETAILS: (id: string) => `/rides/${id}`,
-  ACTIVE_RIDE: "/rides/active",
+  // Driver Onboarding
+  ONBOARDING_PERSONAL: "/driver/onboarding/personal-info",
+  ONBOARDING_DRIVER: "/driver/onboarding/driver-info",
+  ONBOARDING_VEHICLE: "/driver/onboarding/vehicle-info",
+  ONBOARDING_STATUS: "/driver/onboarding/status",
 
-  // Drivers
-  NEARBY_DRIVERS: "/drivers/nearby",
-  DRIVER_LOCATION: (id: string) => `/drivers/${id}/location`,
-
-  // Payments
-  PAYMENT_METHODS: "/payments/methods",
-  ADD_PAYMENT_METHOD: "/payments/methods/add",
-  DELETE_PAYMENT_METHOD: (id: string) => `/payments/methods/${id}`,
-
-  // Promo codes
-  VALIDATE_PROMO: "/promo/validate",
-  APPLY_PROMO: "/promo/apply",
+  //Manufacturers
+  MANUFACTURERS: "/driver/manufacturers",
+  MODELS: (manufacturerId: string) =>
+    `/driver/models?manufacturerId=${manufacturerId}`,
 } as const;
 
 // Colors (matching your design)

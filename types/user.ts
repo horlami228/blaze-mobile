@@ -12,6 +12,9 @@ export interface BaseUser {
   gender: "MALE" | "FEMALE";
   dateOfBirth: string;
   role: "RIDER" | "DRIVER";
+  rating?: number;
+  totalRides?: number;
+  onboardingCompleted?: boolean;
 }
 
 export interface Rider extends BaseUser {
