@@ -11,12 +11,12 @@ export const authService = {
   /**
    * Login with email and password
    */
-  async login(data: LoginRequest): Promise<LoginResponse> {
+  async login(data: LoginRequest): Promise<LoginResponse["data"]> {
     const response = await apiClient.post<LoginResponse>(
       API_ENDPOINTS.LOGIN,
       data
     );
-    return response.data;
+    return response.data.data;
   },
 
   /**
