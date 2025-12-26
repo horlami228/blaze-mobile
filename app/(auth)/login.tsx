@@ -1,8 +1,10 @@
+import { handleApiError } from "@/api/client";
+import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Image,
   Keyboard,
   StyleSheet,
@@ -14,11 +16,24 @@ import {
 } from "react-native";
 
 export default function LoginScreen() {
-  const router = useRouter();
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const { login, isLoading } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const handleSignIn = () => {
-    router.push("/(tabs)/home");
+  const handleSignIn = async () => {
+    Keyboard.dismiss();
+    setErrorMessage(""); // Clear previous errors
+    try {
+      if (!email || !password) {
+        setErrorMessage("Please enter both email and password");
+        return;
+      }
+      await login(email, password);
+    } catch (error: any) {
+      console.log("Sign in failed:", error.message);
+      setErrorMessage(handleApiError(error));
+    }
   };
 
   return (
@@ -33,8 +48,8 @@ export default function LoginScreen() {
             {/* Placeholder for the gift box illustration */}
             <Ionicons
               name="gift-outline"
-              size={80}
-              color="rgba(255,255,255,0.8)"
+              size={60}
+              color="rgba(255, 255, 255, 0.8)"
             />
           </View>
 
@@ -45,32 +60,53 @@ export default function LoginScreen() {
 
         {/* Bottom Content Section */}
         <View style={styles.content}>
-          <Text style={styles.title}>Enter your number</Text>
-
           {/* Input Row */}
-          <View style={styles.inputRow}>
-            {/* Country Code */}
-            <TouchableOpacity style={styles.countrySelector}>
-              {/* Simple flag emoji fallback or icon */}
-              <Text style={{ fontSize: 20 }}>🇳🇬</Text>
-              <Text style={styles.countryCode}>+234</Text>
-              <Ionicons name="chevron-down" size={16} color="#000" />
-            </TouchableOpacity>
-
-            {/* Phone Input */}
+          {/* Email Input */}
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Email</Text>
             <TextInput
-              style={styles.phoneInput}
-              placeholder="7043168193"
+              style={styles.input}
+              placeholder="Enter your email"
               placeholderTextColor="#ccc"
-              keyboardType="phone-pad"
-              value={phoneNumber}
-              onChangeText={setPhoneNumber}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
             />
           </View>
 
+          {/* Password Input */}
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Password</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter your password"
+              placeholderTextColor="#ccc"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
+          </View>
+
+          {/* Error Message */}
+          {errorMessage ? (
+            <View style={styles.errorContainer}>
+              <Ionicons name="alert-circle" size={16} color="#DC2626" />
+              <Text style={styles.errorText}>{errorMessage}</Text>
+            </View>
+          ) : null}
+
           {/* Sign In Button */}
-          <TouchableOpacity style={styles.signInButton} onPress={handleSignIn}>
-            <Text style={styles.signInButtonText}>Sign In</Text>
+          <TouchableOpacity
+            style={[styles.signInButton, isLoading && { opacity: 0.7 }]}
+            onPress={handleSignIn}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={styles.signInButtonText}>Sign In</Text>
+            )}
           </TouchableOpacity>
 
           {/* Divider */}
@@ -90,17 +126,6 @@ export default function LoginScreen() {
             />
             <Text style={styles.socialButtonText}>Continue with Apple</Text>
           </TouchableOpacity>
-
-          {/* <TouchableOpacity style={styles.socialButton}>
-            <Ionicons
-              name="logo-google"
-              size={20}
-              color="black"
-              style={styles.socialIcon}
-            />
-    
-            <Text style={styles.socialButtonText}>Continue with Google</Text>
-          </TouchableOpacity> */}
 
           <TouchableOpacity style={styles.socialButton}>
             <Image
@@ -135,24 +160,23 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#288960", // Bolt Green
+    backgroundColor: "#19942dff", // Bolt Green
   },
   header: {
-    flex: 0.45, // Roughly 45% of the screen
+    flex: 0.4,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 30,
-    paddingBottom: 20,
+    paddingBottom: 10,
   },
   illustrationContainer: {
     marginBottom: 20,
     alignItems: "center",
     justifyContent: "center",
-    // In a real app, this would be an Image
   },
   headerText: {
     color: "white",
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "500",
     textAlign: "center",
     lineHeight: 24,
@@ -171,37 +195,11 @@ const styles = StyleSheet.create({
     color: "#000",
     marginBottom: 24,
   },
-  inputRow: {
-    flexDirection: "row",
-    marginBottom: 24,
-    gap: 12,
-  },
-  countrySelector: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F3F3F3",
-    paddingHorizontal: 12,
-    paddingVertical: 14,
-    borderRadius: 12,
-    gap: 8,
-  },
-  countryCode: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#000",
-  },
-  phoneInput: {
-    flex: 1,
-    backgroundColor: "#F3F3F3",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    color: "#000",
-  },
   signInButton: {
     backgroundColor: "#288960",
     paddingVertical: 16,
     borderRadius: 30, // Fully rounded pill shape
+    paddingHorizontal: 24,
     alignItems: "center",
     marginBottom: 24,
   },
@@ -248,7 +246,7 @@ const styles = StyleSheet.create({
     color: "#000",
   },
   legalText: {
-    marginTop: 20,
+    marginTop: 10,
     fontSize: 11,
     color: "#666",
     textAlign: "center",
@@ -258,5 +256,34 @@ const styles = StyleSheet.create({
     textDecorationLine: "underline",
     fontWeight: "500",
     color: "#288960",
+  },
+  inputContainer: {
+    marginBottom: 16,
+  },
+  inputLabel: {
+    marginBottom: 8,
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
+  },
+  input: {
+    backgroundColor: "#F3F3F3",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: "#000",
+  },
+  errorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  errorText: {
+    color: "#DC2626",
+    fontSize: 14,
+    flex: 1,
   },
 });
