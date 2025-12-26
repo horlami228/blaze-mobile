@@ -1,6 +1,10 @@
-import apiClient, { tokenManager } from "@/api/client";
-import { API_ENDPOINTS, STORAGE_KEYS } from "@/constants/config";
-import { AuthContextType, BaseUser, LoginResponse } from "@/types";
+import { tokenManager } from "@/api/client";
+import { authService } from "@/api/services/auth.service"; // New service
+import { driverService } from "@/api/services/driver.service";
+import { STORAGE_KEYS } from "@/constants/config";
+import { queryKeys } from "@/react-query/query-keys"; // New query keys
+import { queryClient } from "@/react-query/react-query"; // New query client
+import { AuthContextType, BaseUser } from "@/types";
 import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import React, { createContext, useContext, useEffect, useState } from "react";
@@ -23,11 +27,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         const userData = await SecureStore.getItemAsync(STORAGE_KEYS.USER_DATA);
 
         if (token && userData) {
-          setUser(JSON.parse(userData));
+          const parsedUser = JSON.parse(userData);
+          setUser(parsedUser);
           setIsAuthenticated(true);
+
+          // Seed the TanStack Query cache with initial user data
+          queryClient.setQueryData(queryKeys.auth.user(), parsedUser);
         } else {
-          // Token invalid or missing user data
-          // Don't call handleLogout() here to avoid redirect loop on load, just reset state
           setUser(null);
           setIsAuthenticated(false);
         }
@@ -46,15 +52,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      const response = await apiClient.post<LoginResponse>(
-        API_ENDPOINTS.LOGIN,
-        {
-          email,
-          password,
-        }
-      );
+      const data = await authService.login({ email, password });
 
-      const { token, refreshToken, user: userData } = response.data;
+      const { token, refreshToken, user: userData } = data;
 
       // 1. Persist Session
       await tokenManager.setToken(token);
@@ -64,39 +64,62 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         JSON.stringify(userData)
       );
 
-      // 2. Update State
+      // 2. Update States (React State + TanStack Cache)
       setUser(userData as BaseUser);
       setIsAuthenticated(true);
+      queryClient.setQueryData(queryKeys.auth.user(), userData);
 
-      // 3. Navigate
+      // 3. Navigate based on Role & Status
+      if (userData.role === "DRIVER") {
+        // Optimization: Use flag from login response if available
+        if (userData.onboardingCompleted === false) {
+          router.replace("/(onboarding)/personal-info");
+          return;
+        }
+
+        // Fallback: If flag is undefined, check manually (backend compatibility)
+        if (userData.onboardingCompleted === undefined) {
+          try {
+            const status = await driverService.getOnboardingStatus();
+            if (!status.isComplete) {
+              router.replace("/(onboarding)/personal-info");
+              return;
+            }
+          } catch (error) {
+            console.error("Failed to check onboarding status:", error);
+            // Fallback to home if check fails (or handle error UI)
+          }
+        }
+      }
+
       router.replace("/(tabs)/home");
     } catch (error) {
       console.error("Login failed:", error);
-      throw error; // Let the UI handle the specific error display
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
   const verifyOTP = async (otp: string): Promise<void> => {
-    // Implementation placeholder - typically similar to login if OTP returns the final token
-    // For now, assuming login flow handles the primary auth
+    // Placeholder - matches authService.verifyOTP flow if needed
     console.warn("verifyOTP implementation pending backend spec");
     return Promise.resolve();
   };
 
   const handleLogout = async () => {
     try {
-      // 1. Clear Backend Session (optional, fire-and-forget)
-      apiClient.post(API_ENDPOINTS.LOGOUT).catch(() => {});
+      // 1. Clear Backend Session
+      authService.logout().catch(() => {});
 
       // 2. Clear Local Storage
       await tokenManager.clearTokens();
       await SecureStore.deleteItemAsync(STORAGE_KEYS.USER_DATA);
 
-      // 3. Reset State
+      // 3. Reset States (React State + Global Cache)
       setUser(null);
       setIsAuthenticated(false);
+      queryClient.clear(); // Important: Clear all data on logout
 
       // 4. Navigate to Login
       router.replace("/(auth)/login");
@@ -111,6 +134,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     // Optimistic update
     const updatedUser = { ...user, ...data } as BaseUser;
     setUser(updatedUser);
+
+    // Sync with TanStack Cache
+    queryClient.setQueryData(queryKeys.auth.user(), updatedUser);
 
     // Sync with storage
     SecureStore.setItemAsync(

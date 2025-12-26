@@ -1,5 +1,6 @@
+import { useAuth } from "@/context/AuthContext";
 import { Image } from "expo-image";
-import { Platform, StyleSheet } from "react-native";
+import { StyleSheet, TouchableOpacity } from "react-native";
 
 import { HelloWave } from "@/components/hello-wave";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
@@ -8,6 +9,7 @@ import { ThemedView } from "@/components/themed-view";
 import { Link } from "expo-router";
 
 export default function HomeScreen() {
+  const { logout } = useAuth();
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
@@ -24,19 +26,19 @@ export default function HomeScreen() {
       </ThemedView>
       <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Working</ThemedText>
-        <ThemedText>
-          Edit{" "}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText>{" "}
-          to see changes. Press{" "}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: "cmd + d",
-              android: "cmd + m",
-              web: "F12",
-            })}
-          </ThemedText>{" "}
-          to open developer tools.
-        </ThemedText>
+        <TouchableOpacity
+          style={{
+            backgroundColor: "#EF4444",
+            padding: 10,
+            borderRadius: 8,
+            alignItems: "center",
+          }}
+          onPress={logout}
+        >
+          <ThemedText style={{ color: "white", fontWeight: "bold" }}>
+            Logout
+          </ThemedText>
+        </TouchableOpacity>
       </ThemedView>
       <ThemedView style={styles.stepContainer}>
         <Link href="/modal">

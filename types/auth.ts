@@ -6,11 +6,14 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  token: string;
+  statusCode: string;
   message: string;
-  refreshToken: string;
-  user: BaseUser;
-  requiresOTP: boolean;
+  data: {
+    token: string;
+    refreshToken: string;
+    user: BaseUser;
+    requiresOTP: boolean;
+  };
 }
 
 export interface VerifyOTPRequest {
