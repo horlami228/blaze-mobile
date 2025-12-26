@@ -9,6 +9,7 @@ import "react-native-reanimated";
 
 import { AuthProvider } from "@/context/AuthContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { QueryProvider } from "@/react-query/react-query";
 import React from "react";
 import Toast from "react-native-toast-message";
 
@@ -17,19 +18,30 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="(auth)/login" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="modal"
-            options={{ presentation: "modal", title: "Modal" }}
-          />
-        </Stack>
-        <StatusBar style="auto" />
-      </ThemeProvider>
-      <Toast />
+      <QueryProvider>
+        <ThemeProvider
+          value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+        >
+          <Stack>
+            <Stack.Screen name="index" options={{ headerShown: false }} />
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="(auth)/login"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="(onboarding)"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="modal"
+              options={{ presentation: "modal", title: "Modal" }}
+            />
+          </Stack>
+          <StatusBar style="auto" />
+        </ThemeProvider>
+        <Toast />
+      </QueryProvider>
     </AuthProvider>
   );
 }
